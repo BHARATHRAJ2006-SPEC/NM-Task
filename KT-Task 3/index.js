@@ -1,84 +1,82 @@
+const express = require("express");
 const fs = require("fs");
+
+const app = express();
+app.use(express.json());
 
 const filePath = "hospitalData.json";
 
-// Read Data
 function readData() {
-  const data = fs.readFileSync(filePath);
-  return JSON.parse(data);
+  return JSON.parse(fs.readFileSync(filePath));
 }
 
-// Write Data
 function writeData(data) {
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 }
 
-// Validate Mobile Number
 function isValidMobile(mobile) {
   return /^[0-9]{10}$/.test(mobile);
 }
 
-// CREATE - Add Patient
-function addPatient(name, dob, mobile) {
-  if (!name || !dob || !mobile) {
-    console.log("\nAll fields are required.");
-    return;
-  }
+// GET all patients
+app.get("/patients", (req, res) => {
+  res.json(readData());
+});
 
-  if (!isValidMobile(mobile)) {
-    console.log("\nInvalid mobile number. Must be 10 digits.");
-    return;
-  }
+// POST add patient
+app.post("/patients", (req, res) => {
+  const { name, dob, mobile } = req.body;
+
+  if (!name || !dob || !mobile)
+    return res.status(400).json({ message: "All fields required" });
+
+  if (!isValidMobile(mobile))
+    return res.status(400).json({ message: "Invalid mobile number" });
 
   const patients = readData();
   patients.push({ name, dob, mobile });
   writeData(patients);
-  console.log("\nPatient added successfully.");
-}
 
-// READ - View All Patients
-function viewPatients() {
-  const patients = readData();
-  console.log("\n--- All Patient Records ---");
-  patients.forEach((p, i) => {
-    console.log(`${i + 1}. ${p.name} | ${p.dob} | ${p.mobile}`);
-  });
-}
+  res.json({ message: "Patient added successfully" });
+});
 
-// UPDATE - Update Patient
-function updatePatient(name, newMobile) {
-  if (!isValidMobile(newMobile)) {
-    console.log("\nInvalid mobile number.");
-    return;
-  }
+// PUT update patient
+app.put("/patients/:name", (req, res) => {
+  const { mobile } = req.body;
+
+  if (!isValidMobile(mobile))
+    return res.status(400).json({ message: "Invalid mobile number" });
 
   const patients = readData();
-  const patient = patients.find(p => p.name === name);
+  const patient = patients.find(p => p.name === req.params.name);
 
-  if (patient) {
-    patient.mobile = newMobile;
-    writeData(patients);
-    console.log("\nPatient record updated.");
-  } else {
-    console.log("\nPatient not found.");
-  }
-}
+  if (!patient)
+    return res.status(404).json({ message: "Patient not found" });
 
-// DELETE - Delete Patient
-function deletePatient(name) {
-  let patients = readData();
-  patients = patients.filter(p => p.name !== name);
+  patient.mobile = mobile;
   writeData(patients);
-  console.log("\nPatient record deleted.");
-}
 
-// Program Execution
-console.log("\nHOSPITAL RECORD MANAGEMENT SYSTEM\n");
+  res.json({ message: "Patient updated" });
+});
 
-viewPatients();
-addPatient("Ravi Kumar", "1999-05-21", "9998887776");
-updatePatient("Ravi Kumar", "8887776665");
-deletePatient("Ravi Kumar");
-viewPatients();
+// DELETE patient
+app.delete("/patients/:name", (req, res) => {
+  const name = decodeURIComponent(req.params.name);
+  let patients = readData();
 
-console.log("\nProgram completed.\n");
+  const originalLength = patients.length;
+
+  patients = patients.filter(p => p.name !== name);
+
+  if (patients.length === originalLength) {
+    return res.status(404).json({ message: "Patient not found" });
+  }
+
+  writeData(patients);
+  res.json({ message: "Patient deleted successfully" });
+});
+
+// Start server
+app.listen(3000, () => {
+  console.log("Server running on port 3000");
+});
