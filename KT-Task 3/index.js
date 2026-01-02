@@ -13,8 +13,23 @@ function writeData(data) {
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 }
 
+// Validate Mobile Number
+function isValidMobile(mobile) {
+  return /^[0-9]{10}$/.test(mobile);
+}
+
 // CREATE - Add Patient
 function addPatient(name, dob, mobile) {
+  if (!name || !dob || !mobile) {
+    console.log("\nAll fields are required.");
+    return;
+  }
+
+  if (!isValidMobile(mobile)) {
+    console.log("\nInvalid mobile number. Must be 10 digits.");
+    return;
+  }
+
   const patients = readData();
   patients.push({ name, dob, mobile });
   writeData(patients);
@@ -32,8 +47,14 @@ function viewPatients() {
 
 // UPDATE - Update Patient
 function updatePatient(name, newMobile) {
+  if (!isValidMobile(newMobile)) {
+    console.log("\nInvalid mobile number.");
+    return;
+  }
+
   const patients = readData();
   const patient = patients.find(p => p.name === name);
+
   if (patient) {
     patient.mobile = newMobile;
     writeData(patients);
@@ -58,7 +79,6 @@ viewPatients();
 addPatient("Ravi Kumar", "1999-05-21", "9998887776");
 updatePatient("Ravi Kumar", "8887776665");
 deletePatient("Ravi Kumar");
-
 viewPatients();
 
 console.log("\nProgram completed.\n");
