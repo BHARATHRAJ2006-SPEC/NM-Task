@@ -1,0 +1,13 @@
+{
+  "appName": "Hospital Record Management System",
+  "version": "1.0.0",
+  "description": "An application to manage hospital patient records",
+  "developer": "BharathRaj D",
+  "features": [
+    "Add Patient",
+    "View Records",
+    "Update Records",
+    "Delete Records",
+    "Search Patient"
+  ]
+}
